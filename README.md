@@ -1,6 +1,4 @@
-# bthesis-cr_metrics_plugin
-
-How to Install the Plugin in Google Chrome
+# How to Install the Plugin in Google Chrome
 
 
 Step 1 - Download or have a local copy of the repository/folder on your computer
