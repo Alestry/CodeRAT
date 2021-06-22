@@ -5,4 +5,14 @@ button {
     margin: 10px;
     border: none;
     border-radius: 2px;
+    text-align: center;
+}
+
+h2 {
+    width: 180px;
+    text-align: center;
+}
+
+div {
+    text-align: center;
 }
