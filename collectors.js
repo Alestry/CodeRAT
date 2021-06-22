@@ -21,8 +21,12 @@ function log(element) {
 
 
 //Get element clicked
-document.addEventListener("click", function (e){
+document.addEventListener("click", function (e) {
     e = e || window.event;
     var target = e.target || e.srcElement;
-    log(target);
+    loggingstatus = chrome.storage.sync.get("loggingstatus", ({ loggingstatus }) => {
+        if (loggingstatus) {
+            log(target);
+        }
+    });
 }, false);

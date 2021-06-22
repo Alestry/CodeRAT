@@ -1,10 +1,13 @@
 {
 
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Metrics Collection",
   "version": "0.1",
-
   "description": "Collects different metrics about code review sessions on GitLab.",
+
+  "background": {
+    "service_worker": "background.js"
+  },
 
   "icons": {
     "48": "icons/border-48.png"
@@ -12,9 +15,20 @@
 
   "content_scripts": [
     {
-      "matches": ["*://*.gitlab.ifi.uzh.ch/*"],
-      "js": ["collectors.js"]
+      "matches": [ "*://*.gitlab.ifi.uzh.ch/*" ],
+      "js": [ "collectors.js" ]
     }
-  ]
+  ],
+
+  "permissions": [
+    "storage"
+  ],
+
+  "action": {
+    "default_popup": "ui.html",
+    "default_icon": {
+      "48": "icons/border-48.png"
+    }
+  }
 
 }
