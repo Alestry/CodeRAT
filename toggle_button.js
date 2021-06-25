@@ -15,7 +15,7 @@ toggle_button.addEventListener("click", async () => {
 });
 
 
-//Retain button formatting form storage
+//Retain button formatting from storage
 buttonColor = chrome.storage.sync.get("buttonColor", ({ buttonColor }) => {
     toggle_button.style.backgroundColor = buttonColor;
 });
