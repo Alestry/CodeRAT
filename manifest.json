@@ -3,7 +3,7 @@
   "manifest_version": 3,
   "name": "Metrics Collection",
   "version": "0.1",
-  "description": "Collects different metrics about code review sessions on GitLab.",
+  "description": "Collects different metrics about code review sessions on GitHub.",
 
   "background": {
     "service_worker": "background.js"
@@ -22,7 +22,8 @@
   ],
 
   "permissions": [
-    "storage"
+    "storage",
+    "tabs"
   ],
 
   "action": {

@@ -25,8 +25,10 @@ function storageChangedListener(changed) {
     //Make a list of all changed items
     changedStorageItems = Object.keys(changed);
 
-    //Create a log message with a timestamp when a logging session is started/ended
+    //Go through all of the items in the storage
     for (item of changedStorageItems) {
+
+        //Create a log message with a timestamp when a logging session is started/ended
         if (item == "loggingstatus") {
             oldItemValue = changed[item].oldValue;
             newItemValue = changed[item].newValue;
@@ -40,6 +42,9 @@ function storageChangedListener(changed) {
                 loggingStartTime = absoluteTime;
                 chrome.storage.sync.set({ loggingStartTime });
                 console.log("New logging session started at " + getTimeStamp(date));
+                chrome.storage.sync.get("currentTab", ({ currentTab }) => {
+                    console.log(currentTab);
+                });
             }
             if (oldItemValue == true && newItemValue == false) {
                 loggingStartTime = chrome.storage.sync.get("loggingStartTime", ({ loggingStartTime }) => {
@@ -47,8 +52,17 @@ function storageChangedListener(changed) {
                     console.log("Current logging session ended at " + getTimeStamp(date) + " after " + timePassed +  " ms");
                 });
             }
-            break;
+            //break;
         }
+
+        //Log the new fucused tab when a tab change occurs
+        if (item == "currentTab") {
+            console.log("BRRR");
+            if (changed[item].newValue != changed[item].oldValue) {
+                console.log("Tab has changed!");
+            }
+        }
+
     }
 }
 
@@ -57,7 +71,7 @@ function storageChangedListener(changed) {
 document.addEventListener("click", function (e) {
     e = e || window.event;
     var target = e.target || e.srcElement;
-    loggingstatus = chrome.storage.sync.get("loggingstatus", ({ loggingstatus }) => {
+    chrome.storage.sync.get("loggingstatus", ({ loggingstatus }) => {
         if (loggingstatus) {
             log(target);
         }
