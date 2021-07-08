@@ -5,6 +5,11 @@ toggle_button.addEventListener("click", async () => {
             loggingstatus = false;
             toggle_button.style.backgroundColor = buttonColor = "lime";
             toggle_button.innerText = buttonInnerText = "Start Logging";
+            chrome.storage.sync.get("logText", ({ logText }) => {
+                navigator.clipboard.writeText(logText).then(() => {
+                    alert("Logging Session copied to Clipboard.");
+                });
+            });
         } else {
             loggingstatus = true;
             toggle_button.style.backgroundColor = buttonColor = "red";

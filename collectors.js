@@ -15,8 +15,14 @@ function getTimeStamp(date) {
 //Function to log the current timestamp with the current element
 function log(element) {
     timeStamp = getTimeStamp(new Date());
-    console.log(timeStamp);
-    console.log(element);
+    //console.log(timeStamp);
+    //console.log(element);
+    chrome.storage.sync.get("logText", ({ logText }) => {
+        logText += timeStamp + " - ";
+        logText += element;
+        logText += "\n";
+        chrome.storage.sync.set({ logText });
+    });
 }
 
 
@@ -35,24 +41,33 @@ function storageChangedListener(changed) {
 
             //Log when a session starts/ends. The absolute time is needed in the storage to determine a logging session's length
             date = new Date();
-            absoluteTime = date.getTime();
+            let absoluteTime = date.getTime();
 
             //Determine whether it is the start or the end of a logging session and log the appropriate message
             if (oldItemValue == false && newItemValue == true) {
                 loggingStartTime = absoluteTime;
                 chrome.storage.sync.set({ loggingStartTime });
-                console.log("New logging session started at " + getTimeStamp(date));
+                chrome.storage.sync.get("logText", ({ logText }) => {
+                    logText += "New logging session started at " + getTimeStamp(date) + "\n";
+                    chrome.storage.sync.set({ logText });
+                });
                 chrome.storage.sync.get("currentTab", ({ currentTab }) => {
                     console.log(currentTab);
                 });
             }
             if (oldItemValue == true && newItemValue == false) {
-                loggingStartTime = chrome.storage.sync.get("loggingStartTime", ({ loggingStartTime }) => {
+                chrome.storage.sync.get(["loggingStartTime", "logText", "loggingFinished"], ({ key1: loggingStartTime, key2: logText, key3: loggingFinished}) => {
                     timePassed = absoluteTime - loggingStartTime;
-                    console.log("Current logging session ended at " + getTimeStamp(date) + " after " + timePassed +  " ms");
+                    loggingFinished = true;
+                    logText += "Current logging session ended at " + getTimeStamp(date) + " after " + timePassed + " ms\n";
+                    chrome.storage.sync.set({ loggingStartTime, logText, loggingFinished });
                 });
+                /*chrome.storage.sync.get("logText", ({ logText }) => {
+                    navigator.clipboard.writeText(logText).then(() => {
+                        alert("Logging Session copied to Clipboard.");
+                    });
+                });*/
             }
-            //break;
         }
 
         //Log the new fucused tab when a tab change occurs

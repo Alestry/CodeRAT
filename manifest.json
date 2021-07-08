@@ -23,7 +23,8 @@
 
   "permissions": [
     "storage",
-    "tabs"
+    "tabs",
+    "activeTab"
   ],
 
   "action": {
