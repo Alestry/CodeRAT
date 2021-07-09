@@ -15,12 +15,8 @@ function getTimeStamp(date) {
 //Function to log the current timestamp with the current element
 function log(element) {
     timeStamp = getTimeStamp(new Date());
-    //console.log(timeStamp);
-    //console.log(element);
     chrome.storage.sync.get("logText", ({ logText }) => {
-        logText += timeStamp + " - ";
-        logText += element;
-        logText += "\n";
+        logText += timeStamp + "    CLICK: " + element.constructor.name + " - " + element.nodeName + " - " + element.innerHTML + "\n";
         chrome.storage.sync.set({ logText });
     });
 }
@@ -48,7 +44,8 @@ function storageChangedListener(changed) {
                 loggingStartTime = absoluteTime;
                 chrome.storage.sync.set({ loggingStartTime });
                 chrome.storage.sync.get("logText", ({ logText }) => {
-                    logText += "New logging session started at " + getTimeStamp(date) + "\n";
+                    let currentURL = location.href;
+                    logText = "New logging session started at " + getTimeStamp(date) + ". Starting URL:  " + currentURL + "\n";
                     chrome.storage.sync.set({ logText });
                 });
                 chrome.storage.sync.get("currentTab", ({ currentTab }) => {
