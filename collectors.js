@@ -45,7 +45,7 @@ function storageChangedListener(changed) {
                 chrome.storage.sync.set({ loggingStartTime });
                 chrome.storage.sync.get("logText", ({ logText }) => {
                     let currentURL = location.href;
-                    logText = "New logging session started at " + getTimeStamp(date) + ". Starting URL:  " + currentURL + "\n";
+                    logText = "New logging session started at " + getTimeStamp(date) + "\nStarting URL:  " + currentURL + "\n";
                     chrome.storage.sync.set({ logText });
                 });
                 chrome.storage.sync.get("currentTab", ({ currentTab }) => {
@@ -53,17 +53,12 @@ function storageChangedListener(changed) {
                 });
             }
             if (oldItemValue == true && newItemValue == false) {
-                chrome.storage.sync.get(["loggingStartTime", "logText", "loggingFinished"], ({ key1: loggingStartTime, key2: logText, key3: loggingFinished}) => {
+                chrome.storage.sync.get(["loggingStartTime", "logText", "loggingFinished"], ({ loggingStartTime, logText, loggingFinished}) => {
                     timePassed = absoluteTime - loggingStartTime;
                     loggingFinished = true;
                     logText += "Current logging session ended at " + getTimeStamp(date) + " after " + timePassed + " ms\n";
                     chrome.storage.sync.set({ loggingStartTime, logText, loggingFinished });
                 });
-                /*chrome.storage.sync.get("logText", ({ logText }) => {
-                    navigator.clipboard.writeText(logText).then(() => {
-                        alert("Logging Session copied to Clipboard.");
-                    });
-                });*/
             }
         }
 

@@ -5,11 +5,6 @@ toggle_button.addEventListener("click", async () => {
             loggingstatus = false;
             toggle_button.style.backgroundColor = buttonColor = "lime";
             toggle_button.innerText = buttonInnerText = "Start Logging";
-            chrome.storage.sync.get("logText", ({ logText }) => {
-                navigator.clipboard.writeText(logText).then(() => {
-                    alert("Logging Session copied to Clipboard.");
-                });
-            });
         } else {
             loggingstatus = true;
             toggle_button.style.backgroundColor = buttonColor = "red";
@@ -27,3 +22,35 @@ chrome.storage.sync.get("buttonColor", ({ buttonColor }) => {
 chrome.storage.sync.get("buttonInnerText", ({ buttonInnerText }) => {
     toggle_button.innerText = buttonInnerText;
 });
+
+
+//Handle changes in the storage
+function storageChangedListener(changed) {
+    //Make a list of all changed items
+    changedStorageItems = Object.keys(changed);
+
+    //Go through all of the items in the storage
+    for (item of changedStorageItems) {
+
+        //
+        if (item == "loggingFinished") {
+            oldItemValue = changed[item].oldValue;
+            newItemValue = changed[item].newValue;
+
+            //
+            if (oldItemValue == false && newItemValue == true) {
+                loggingFinished = false;
+                chrome.storage.sync.set({ loggingFinished });
+                chrome.storage.sync.get("logText", ({ logText }) => {
+                    navigator.clipboard.writeText(logText).then(() => {
+                        alert("Logging Session copied to Clipboard.");
+                    });
+                });
+            }
+        }
+    }
+}
+
+
+//Listener for changes in the storage
+chrome.storage.onChanged.addListener(storageChangedListener);
