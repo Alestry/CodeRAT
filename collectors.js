@@ -16,8 +16,21 @@ function getTimeStamp(date) {
 function log(element) {
     timeStamp = getTimeStamp(new Date());
     chrome.storage.sync.get("logText", ({ logText }) => {
-        logText += timeStamp + "    CLICK: " + element.constructor.name + " - " + element.nodeName + " - " + element.innerHTML + "\n";
+        logText += timeStamp + "    CLICK: " + element.constructor.name + " - " + element.nodeName + " - " + element.innerHTML.substring(0, 100) + "\n";
         chrome.storage.sync.set({ logText });
+    });
+}
+
+
+//Function to check the current URL and compare with the "old" one
+function urlChangeDetector() {
+    console.log("execute");
+    chrome.storage.sync.get("currentURL", ({ currentURL }) => {
+        let newURL = location.href;
+        if (currentURL != newURL) {
+            currentURL = newURL;
+            chrome.storage.sync.set({ currentURL });
+        }
     });
 }
 
@@ -46,8 +59,10 @@ function storageChangedListener(changed) {
                 chrome.storage.sync.get("logText", ({ logText }) => {
                     let currentURL = location.href;
                     logText = "New logging session started at " + getTimeStamp(date) + "\nStarting URL:  " + currentURL + "\n";
-                    chrome.storage.sync.set({ logText });
+                    chrome.storage.sync.set({ logText, currentURL });
                 });
+
+                //Log the current tab
                 chrome.storage.sync.get("currentTab", ({ currentTab }) => {
                     console.log(currentTab);
                 });
@@ -88,3 +103,17 @@ document.addEventListener("click", function (e) {
 
 //Listener for changes in the storage
 chrome.storage.onChanged.addListener(storageChangedListener);
+
+
+//Listener for tab changes
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.message === "urlchange") {
+        chrome.storage.sync.get(["loggingstatus", "logText"], ({ loggingstatus, logText }) => {
+            if (loggingstatus) {
+                timeStamp = getTimeStamp(new Date());
+                logText += timeStamp + "    URLCHANGE: " + request.url + "\n";
+                chrome.storage.sync.set({ logText });
+            }
+        });
+    }
+});

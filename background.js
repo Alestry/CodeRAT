@@ -15,9 +15,10 @@ chrome.runtime.onInstalled.addListener(() => {
     let buttonColor = "lime";
     let buttonInnerText = "Start Logging";
     let logText = "";
+    let currentURL = "";
     let currentTab = getCurrentTab();
     //Initialize storage
-    chrome.storage.sync.set({ loggingstatus, loggingStartTime, loggingFinished, buttonColor, buttonInnerText, logText, currentTab });
+    chrome.storage.sync.set({ loggingstatus, loggingStartTime, loggingFinished, buttonColor, buttonInnerText, logText, currentURL, currentTab });
 });
 
 
@@ -26,3 +27,16 @@ chrome.tabs.onActivated.addListener(() => {
     currentTab = getCurrentTab();
     chrome.storage.sync.set({ currentTab });
 });
+
+
+//Listener for URL change
+chrome.tabs.onUpdated.addListener(
+    function (tabId, changeInfo, tab) {
+        if (changeInfo.url) {
+            chrome.tabs.sendMessage(tabId, {
+                message: "urlchange",
+                url: changeInfo.url
+            })
+        }
+    }
+);
