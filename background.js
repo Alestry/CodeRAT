@@ -23,10 +23,10 @@ chrome.runtime.onInstalled.addListener(() => {
 
 
 //On active tab change, update the storage with the new active tab
-chrome.tabs.onActivated.addListener(() => {
+/*chrome.tabs.onActivated.addListener(() => {
     currentTab = getCurrentTab();
     chrome.storage.sync.set({ currentTab });
-});
+});*/
 
 
 //Listener for URL change
@@ -36,7 +36,7 @@ chrome.tabs.onUpdated.addListener(
             chrome.tabs.sendMessage(tabId, {
                 message: "urlchange",
                 url: changeInfo.url
-            })
+            });
         }
     }
 );

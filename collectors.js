@@ -16,14 +16,15 @@ function getTimeStamp(date) {
 function log(element) {
     timeStamp = getTimeStamp(new Date());
     chrome.storage.sync.get("logText", ({ logText }) => {
-        logText += timeStamp + "    CLICK: " + element.constructor.name + " - " + element.nodeName + " - " + element.innerHTML.substring(0, 100) + "\n";
+        logText += timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'CLICK: ' + element.constructor.name + ' - ' + element.nodeName + ' - ' + element.innerHTML.substring(0, 150) + '\n';
+        console.log(timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'CLICK: ' + element.constructor.name + ' - ' + element.nodeName + ' - ' + element.innerHTML.substring(0, 150) + '\n');
         chrome.storage.sync.set({ logText });
     });
 }
 
 
 //Function to check the current URL and compare with the "old" one
-function urlChangeDetector() {
+/*function urlChangeDetector() {
     console.log("execute");
     chrome.storage.sync.get("currentURL", ({ currentURL }) => {
         let newURL = location.href;
@@ -32,7 +33,7 @@ function urlChangeDetector() {
             chrome.storage.sync.set({ currentURL });
         }
     });
-}
+}*/
 
 
 //Handle changes in the storage
@@ -71,7 +72,7 @@ function storageChangedListener(changed) {
                 chrome.storage.sync.get(["loggingStartTime", "logText", "loggingFinished"], ({ loggingStartTime, logText, loggingFinished}) => {
                     timePassed = absoluteTime - loggingStartTime;
                     loggingFinished = true;
-                    logText += "Current logging session ended at " + getTimeStamp(date) + " after " + timePassed + " ms\n";
+                    logText += "Ending URL:  " + location.href + "\nCurrent logging session ended at " + getTimeStamp(date) + " after " + timePassed + " ms\n";
                     chrome.storage.sync.set({ loggingStartTime, logText, loggingFinished });
                 });
             }
@@ -79,7 +80,7 @@ function storageChangedListener(changed) {
 
         //Log the new fucused tab when a tab change occurs
         if (item == "currentTab") {
-            console.log("BRRR");
+            console.log("Checkpoint");
             if (changed[item].newValue != changed[item].oldValue) {
                 console.log("Tab has changed!");
             }
@@ -105,13 +106,14 @@ document.addEventListener("click", function (e) {
 chrome.storage.onChanged.addListener(storageChangedListener);
 
 
-//Listener for tab changes
+//Listener for tab/url changes
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.message === "urlchange") {
         chrome.storage.sync.get(["loggingstatus", "logText"], ({ loggingstatus, logText }) => {
             if (loggingstatus) {
                 timeStamp = getTimeStamp(new Date());
-                logText += timeStamp + "    URLCHANGE: " + request.url + "\n";
+                logText += timeStamp + /*(23 - timeStamp.length + 4) **/ '    '+ 'URL changed to ' + request.url + '\n';
+                console.log(timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'URL changed to ' + request.url + '\n');
                 chrome.storage.sync.set({ logText });
             }
         });
