@@ -72,9 +72,14 @@ function storageChangedListener(changed) {
                         logText += fileTimers[0][0] + ": " + fileTimers[0][1] + " ms\n";
                     } else {
                         let i = 0;
-                        for (i = 0; i < fileTimers.length; i++) {
-                            logText += fileTimers[i][0] + ": " + fileTimers[i][1] + "ms\n";
+                        let numberOfFiles = fileTimers.length;
+                        let totalTime = 0;
+                        for (i = 0; i < numberOfFiles; i++) {
+                            logText += fileTimers[i][0] + ": " + fileTimers[i][1] + " ms\n";
+                            totalTime += Number(fileTimers[i][1]);
                         }
+                        let avgTime = totalTime / numberOfFiles;
+                        logText += "\nAverage time per file: " + avgTime + " ms\n";
                     }
                     chrome.storage.sync.set({ loggingStartTime, logText, loggingFinished });
                 });
