@@ -32,12 +32,12 @@ function storageChangedListener(changed) {
     //Go through all of the items in the storage
     for (item of changedStorageItems) {
 
-        //
+        //Look at the loggingFinished parameter
         if (item == "loggingFinished") {
             oldItemValue = changed[item].oldValue;
             newItemValue = changed[item].newValue;
 
-            //
+            //If it indicates that a logging session has ended
             if (oldItemValue == false && newItemValue == true) {
                 loggingFinished = false;
                 chrome.storage.sync.set({ loggingFinished });

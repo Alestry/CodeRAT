@@ -17,8 +17,10 @@ chrome.runtime.onInstalled.addListener(() => {
     let logText = "";
     let currentURL = "";
     let currentTab = getCurrentTab();
+    let fileTimers = [[], []];
+    let currentFileTimer = ["", ""];
     //Initialize storage
-    chrome.storage.sync.set({ loggingstatus, loggingStartTime, loggingFinished, buttonColor, buttonInnerText, logText, currentURL, currentTab });
+    chrome.storage.sync.set({ loggingstatus, loggingStartTime, loggingFinished, buttonColor, buttonInnerText, logText, currentURL, currentTab, fileTimers, currentFileTimer });
 });
 
 
