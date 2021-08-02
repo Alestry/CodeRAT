@@ -74,12 +74,18 @@ function storageChangedListener(changed) {
                         let i = 0;
                         let numberOfFiles = fileTimers.length;
                         let totalTime = 0;
+                        let totalAccesses = 0;
                         for (i = 0; i < numberOfFiles; i++) {
-                            logText += fileTimers[i][0] + ": " + fileTimers[i][1] + " ms\n";
+                            logText += fileTimers[i][0] + ": " + fileTimers[i][1] + " ms across " + fileTimers[i][2] + " accesses\n";
                             totalTime += Number(fileTimers[i][1]);
+                            totalAccesses += fileTimers[i][2];
                         }
                         let avgTime = totalTime / numberOfFiles;
-                        logText += "\nAverage time per file: " + avgTime + " ms\n";
+                        let avgAcesses = totalAccesses / numberOfFiles;
+                        logText += "\nTotal time spent accessing files: " + totalTime + " ms\n";
+                        logText += "Average time per file: " + avgTime + " ms\n";
+                        logText += "Total number of file accesses: " + totalAccesses + "\n";
+                        logText += "Average number of accesses per file: " + avgAcesses;
                     }
                     chrome.storage.sync.set({ loggingStartTime, logText, loggingFinished });
                 });
@@ -138,26 +144,27 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                         }
                     }
                     if (currentFileIdIndex != -1) {
-                        //If the current file already has an existing timer in the array, add the current elapsed time to it
+                        //If the current file already has an existing timer in the array, add the current elapsed time to it and add add 1 to the visit counter
                         fileTimers[currentFileIdIndex][1] = (Number(fileTimers[currentFileIdIndex][1]) + elapsedTime).toString();
+                        fileTimers[currentFileIdIndex][2] += 1;
                     } else {
-                        //If the current file does not yet have an existing timer in the array, create one and assign the current elapsed time
+                        //If the current file does not yet have an existing timer in the array, create one, assign the current elapsed time and set its visit counter to 1
                         //Due to the manner of creation of the fileTimers array, we need to do some janky things to have a clean array in the end
                         if (fileTimers.length < 3) {
                             //"Stupid" case -> need to overwrite existing empty array entries
                             if (fileTimers[0] == "") {
                                 //Subcase 1: no entries yet
-                                fileTimers[0] = [currentFileId, elapsedTime.toString()];
+                                fileTimers[0] = [currentFileId, elapsedTime.toString(), 1];
                             } else if (fileTimers[1] == "") {
                                 //Subcase 2: one entry
-                                fileTimers[1] = [currentFileId, elapsedTime.toString()];
+                                fileTimers[1] = [currentFileId, elapsedTime.toString(), 1];
                             } else {
                                 //Subcase 3: two entries and both not empty -> can just push normally
-                                fileTimers.push([currentFileId, elapsedTime.toString()]);
+                                fileTimers.push([currentFileId, elapsedTime.toString(), 1]);
                             }
                         } else {
                             //"Normal" case -> can just push a new entry
-                            fileTimers.push([currentFileId, elapsedTime.toString()]);
+                            fileTimers.push([currentFileId, elapsedTime.toString(), 1]);
                         }
                     }
                 }
