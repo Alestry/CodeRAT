@@ -20,7 +20,7 @@ Metrics Required to Collect
 
 	Time spent on a code review session: Using the browser pulgin, determine when a session starts and when it ends
 
-	Files and resources utilized by code reviewers during a review session: Retrieve the focused tab and the current opened file using the browser plugin
+	Files and resources utilized by code reviewers during a review session: Retrieve the currently open file using the browser plugin
 
 	Get the number of defects found during a rewiew session: Detect when the equivalent of a "report defect" command is triggered and count the number of these events
 
