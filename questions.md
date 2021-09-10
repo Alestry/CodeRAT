@@ -29,8 +29,6 @@ Features of the Browser Plugin based on the above Requirements
 
 	Determine when a code review session starts and ends and calculate its length based on these metrics
 
-	Detect which tab the code reviewer has focused at any time during a code review session
-
 	Detect which file the code reviewer has open at any time during a code review session
 
 	Determine when a code reviewer reports a code defect during a code review session and count the number of these occurrences
