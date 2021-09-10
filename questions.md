@@ -22,8 +22,8 @@ Metrics Required to Collect
 
 	Files and resources utilized by code reviewers during a review session: Retrieve the currently open file using the browser plugin
 
-	Get the number of defects found during a rewiew session: Detect when the equivalent of a "report defect" command is triggered and count the number of these events
-
+	Get the number of defects found during a rewiew session: Count the number of defects reported by the code reviewer
+	
 
 Features of the Browser Plugin based on the above Requirements
 
