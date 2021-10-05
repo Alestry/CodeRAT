@@ -16,7 +16,7 @@ function getTimeStamp(date) {
 function log(element) {
     timeStamp = getTimeStamp(new Date());
     chrome.storage.sync.get("logText", ({ logText }) => {
-        logText += timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'CLICK: ' + element.constructor.name + ' - ' + element.nodeName + ' - ' + element.innerHTML.substring(0, 150) + '\n';
+        //logText += timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'CLICK: ' + element.constructor.name + ' - ' + element.nodeName + ' - ' + element.innerHTML.substring(0, 150) + '\n';
         console.log(timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'CLICK: ' + element.constructor.name + ' - ' + element.nodeName + ' - ' + element.innerHTML.substring(0, 150) + '\n');
         chrome.storage.sync.set({ logText });
     });
@@ -32,7 +32,7 @@ function storageChangedListener(changed) {
     for (item of changedStorageItems) {
 
         //Create a log message with a timestamp when a logging session is started/ended
-        if (item == "loggingstatus") {
+        if (item == "sessionstatus") {
             oldItemValue = changed[item].oldValue;
             newItemValue = changed[item].newValue;
 
@@ -60,9 +60,8 @@ function storageChangedListener(changed) {
             }
             //End
             if (oldItemValue == true && newItemValue == false) {
-                chrome.storage.sync.get(["loggingStartTime", "logText", "loggingFinished", "fileTimers"], ({ loggingStartTime, logText, loggingFinished, fileTimers }) => {
+                chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers"], ({ loggingStartTime, logText, fullLog, fileTimers }) => {
                     timePassed = absoluteTime - loggingStartTime;
-                    loggingFinished = true;
                     logText += "Ending URL:  " + location.href + "\nCurrent logging session ended at " + getTimeStamp(date) + " after " + timePassed + " ms\n";
                     logText += "\nTime spent on each file:\n";
                     //Janky things with fileTimers array, depending on its length (make it look nice)
@@ -84,10 +83,11 @@ function storageChangedListener(changed) {
                         let avgAcesses = totalAccesses / numberOfFiles;
                         logText += "\nTotal time spent accessing files: " + totalTime + " ms\n";
                         logText += "Average time per file: " + avgTime + " ms\n";
-                        logText += "Total number of file accesses: " + totalAccesses + "\n";
+                        logText += "Total number of file access(es): " + totalAccesses + "\n";
                         logText += "Average number of accesses per file: " + avgAcesses;
                     }
-                    chrome.storage.sync.set({ loggingStartTime, logText, loggingFinished });
+                    fullLog += logText+ "\n----------\n";
+                    chrome.storage.sync.set({ loggingStartTime, logText, fullLog });
                 });
             }
         }
@@ -123,8 +123,19 @@ chrome.storage.onChanged.addListener(storageChangedListener);
 //Listener for tab/url changes
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.message === "urlchange") {
-        chrome.storage.sync.get(["loggingstatus", "logText", "fileTimers", "currentFileTimer"], ({ loggingstatus, logText, fileTimers, currentFileTimer }) => {
+        chrome.storage.sync.get(["loggingstatus", "sessionstatus", "logText", "fileTimers", "currentFileTimer"], ({ loggingstatus, sessionstatus, logText, fileTimers, currentFileTimer }) => {
+            //Dynamically start a session
             if (loggingstatus) {
+                let splitUrl = request.url.split("/");
+                //Check URL based on heuristics
+                if ((splitUrl[2] == "github.com" && splitUrl[5] == "pull") && !sessionstatus) {
+                    sessionstatus = true;
+                }
+                chrome.storage.sync.set({ sessionstatus });
+            }
+
+            //Handling files and file timers
+            if (loggingstatus && sessionstatus) {
                 let tempDate = new Date();
                 let tempTime = tempDate.getTime();
                 let timeStamp = getTimeStamp(tempDate);
@@ -182,8 +193,19 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     currentFileTimer = ["", ""];
                 }
 
-                logText += timeStamp + /*(23 - timeStamp.length + 4) **/ '    '+ 'URL changed to ' + request.url + '\n';
+                //logText += timeStamp + /*(23 - timeStamp.length + 4) **/ '    '+ 'URL changed to ' + request.url + '\n';
                 console.log(timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'URL changed to ' + request.url + '\n');
+
+                //Dynamically end a session
+                if (loggingstatus) {
+                    let splitUrl = request.url.split("/");
+                    //Check URL based on heuristics
+                    if (!(splitUrl[2] == "github.com" && splitUrl[5] == "pull") && sessionstatus) {
+                        sessionstatus = false;
+                    }
+                    chrome.storage.sync.set({ sessionstatus });
+                }
+
                 chrome.storage.sync.set({ logText, fileTimers, currentFileTimer });
             }
         });

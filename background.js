@@ -9,18 +9,17 @@ async function getCurrentTab() {
 //Initialize the variables and storage
 chrome.runtime.onInstalled.addListener(() => {
     //Initialize variables
-    let loggingstatus = false;
+    let loggingstatus = true;
+    let sessionstatus = false;
     let loggingStartTime = 0;
-    let loggingFinished = false;
-    let buttonColor = "lime";
-    let buttonInnerText = "Start Logging";
     let logText = "";
+    let fullLog = "";
     let currentURL = "";
     let currentTab = getCurrentTab();
     let fileTimers = [[], []];
     let currentFileTimer = ["", ""];
     //Initialize storage
-    chrome.storage.sync.set({ loggingstatus, loggingStartTime, loggingFinished, buttonColor, buttonInnerText, logText, currentURL, currentTab, fileTimers, currentFileTimer });
+    chrome.storage.sync.set({ loggingstatus, sessionstatus, loggingStartTime, logText, fullLog, currentURL, currentTab, fileTimers, currentFileTimer });
 });
 
 
