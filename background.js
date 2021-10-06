@@ -9,6 +9,16 @@ async function getCurrentTab() {
 //Initialize the variables and storage
 chrome.runtime.onInstalled.addListener(() => {
     //Initialize variables
+    //loggingstatus: bool, tracks whether the extension is currently enabled
+    //sessionstatus: bool, tracks whether we are currently in the process of reviewing a pull request
+    //loggingStartTime: int, tracks the absolute time when a pull request review session starts
+    //logText: str, temporary storage for the current pull request review session log
+    //fullLog: str, holds all of the pull request review session logs
+    //currentURL: str, current URL
+    //currentTab: -
+    //fileTimers: 2D array, holds all of the separate [file id, file timer] pairs
+    //currentFileTimer: array of str, holds the current [file id, file timer] pair
+    //feedbackValue: str, tracks what kind of feedback was given at the end of a pull request review session (approve/comment/reject)
     let loggingstatus = true;
     let sessionstatus = false;
     let loggingStartTime = 0;
@@ -18,8 +28,9 @@ chrome.runtime.onInstalled.addListener(() => {
     let currentTab = getCurrentTab();
     let fileTimers = [[], []];
     let currentFileTimer = ["", ""];
+    let feedbackValue = "";
     //Initialize storage
-    chrome.storage.sync.set({ loggingstatus, sessionstatus, loggingStartTime, logText, fullLog, currentURL, currentTab, fileTimers, currentFileTimer });
+    chrome.storage.sync.set({ loggingstatus, sessionstatus, loggingStartTime, logText, fullLog, currentURL, currentTab, fileTimers, currentFileTimer, feedbackValue });
 });
 
 

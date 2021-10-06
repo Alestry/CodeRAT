@@ -45,12 +45,13 @@ function storageChangedListener(changed) {
             if (oldItemValue == false && newItemValue == true) {
                 loggingStartTime = absoluteTime;
                 chrome.storage.sync.set({ loggingStartTime });
-                chrome.storage.sync.get(["logText", "fileTimers", "currentFileTimer"], ({ logText, fileTimers, currentFileTimer }) => {
+                chrome.storage.sync.get(["logText", "fileTimers", "currentFileTimer", "feedbackValue"], ({ logText, fileTimers, currentFileTimer, feedbackValue }) => {
                     let currentURL = location.href;
-                    fileTimers = [[],[]];
+                    fileTimers = [[], []];
+                    feedbackValue = "";
                     currentFileTimer = ["", ""];
                     logText = "New logging session started at " + getTimeStamp(date) + "\nStarting URL:  " + currentURL + "\n";
-                    chrome.storage.sync.set({ logText, currentURL, fileTimers, currentFileTimer });
+                    chrome.storage.sync.set({ logText, currentURL, fileTimers, currentFileTimer, feedbackValue });
                 });
 
                 //Log the current tab
@@ -60,7 +61,7 @@ function storageChangedListener(changed) {
             }
             //End
             if (oldItemValue == true && newItemValue == false) {
-                chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers"], ({ loggingStartTime, logText, fullLog, fileTimers }) => {
+                chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers", "feedbackValue"], ({ loggingStartTime, logText, fullLog, fileTimers, feedbackValue }) => {
                     timePassed = absoluteTime - loggingStartTime;
                     logText += "Ending URL:  " + location.href + "\nCurrent logging session ended at " + getTimeStamp(date) + " after " + timePassed + " ms\n";
                     logText += "\nTime spent on each file:\n";
@@ -84,7 +85,13 @@ function storageChangedListener(changed) {
                         logText += "\nTotal time spent accessing files: " + totalTime + " ms\n";
                         logText += "Average time per file: " + avgTime + " ms\n";
                         logText += "Total number of file access(es): " + totalAccesses + "\n";
-                        logText += "Average number of accesses per file: " + avgAcesses;
+                        logText += "Average number of accesses per file: " + avgAcesses+ "\n";
+                    }
+                    //Log the given feedback
+                    if (feedbackValue != "") {
+                        logText += "\nFeedback: " + feedbackValue + "\n";
+                    } else {
+                        logText += "\nNo feedback was given.\n";
                     }
                     fullLog += logText+ "\n----------\n";
                     chrome.storage.sync.set({ loggingStartTime, logText, fullLog });
@@ -108,12 +115,36 @@ function storageChangedListener(changed) {
 document.addEventListener("click", function (e) {
     e = e || window.event;
     var target = e.target || e.srcElement;
-    chrome.storage.sync.get("loggingstatus", ({ loggingstatus }) => {
-        if (loggingstatus) {
+    chrome.storage.sync.get("sessionstatus", ({ sessionstatus }) => {
+        if (sessionstatus) {
+            adjustFeedbackValue(target);
             log(target);
         }
     });
 }, false);
+
+
+//Function to adjust the feedback value of a pull request review session (approved/comment/rejected)
+function adjustFeedbackValue(element) {
+    //Check if the clicked element was one of the radio buttons to give feedback
+    //Based on heuristics
+    let currentStr = element.innerHTML;
+    let currentSubStr = element.innerHTML.substring(70, 76);
+    if (currentSubStr == "approv" || currentStr == "Submit feedback and approve merging these changes." || currentSubStr == "commen" || currentStr == "Submit general feedback without explicit approval." || currentSubStr == "reject" || currentStr == "Submit feedback that must be addressed before merging.") {
+        chrome.storage.sync.get("feedbackValue", ({ feedbackValue }) => {
+            if (currentSubStr == "approv" || currentStr == "Submit feedback and approve merging these changes.") {
+                feedbackValue = "Approved";
+            }
+            if (currentSubStr == "commen" || currentStr == "Submit general feedback without explicit approval.") {
+                feedbackValue = "Commented";
+            }
+            if (currentSubStr == "reject" || currentStr == "Submit feedback that must be addressed before merging.") {
+                feedbackValue = "Rejected";
+            }
+            chrome.storage.sync.set({ feedbackValue });
+        });
+    }
+}
 
 
 //Listener for changes in the storage
@@ -197,16 +228,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 console.log(timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'URL changed to ' + request.url + '\n');
 
                 //Dynamically end a session
-                if (loggingstatus) {
-                    let splitUrl = request.url.split("/");
-                    //Check URL based on heuristics
-                    if (!(splitUrl[2] == "github.com" && splitUrl[5] == "pull") && sessionstatus) {
-                        sessionstatus = false;
-                    }
-                    chrome.storage.sync.set({ sessionstatus });
+                //Check URL based on heuristics
+                if (!(splitUrl[2] == "github.com" && splitUrl[5] == "pull") && sessionstatus) {
+                    sessionstatus = false;
                 }
 
-                chrome.storage.sync.set({ logText, fileTimers, currentFileTimer });
+                chrome.storage.sync.set({ logText, fileTimers, currentFileTimer, sessionstatus });
             }
         });
     }
