@@ -31,27 +31,29 @@ function storageChangedListener(changed) {
     //Go through all of the items in the storage
     for (item of changedStorageItems) {
 
-        //Create a log message with a timestamp when a logging session is started/ended
+        //Create a log message with a timestamp when a pull request review session is started/ended
         if (item == "sessionstatus") {
             oldItemValue = changed[item].oldValue;
             newItemValue = changed[item].newValue;
 
-            //Log when a session starts/ends. The absolute time is needed in the storage to determine a logging session's length
+            //Log when a session starts/ends. The absolute time is needed in the storage to determine a pull request review session's length
             date = new Date();
             let absoluteTime = date.getTime();
 
-            //Determine whether it is the start or the end of a logging session and log the appropriate message
+            //Determine whether it is the start or the end of a pull request review session and log the appropriate message
             //Start
             if (oldItemValue == false && newItemValue == true) {
                 loggingStartTime = absoluteTime;
                 chrome.storage.sync.set({ loggingStartTime });
-                chrome.storage.sync.get(["logText", "fileTimers", "currentFileTimer", "feedbackValue"], ({ logText, fileTimers, currentFileTimer, feedbackValue }) => {
+                chrome.storage.sync.get(["logText", "fileTimers", "currentFileTimer", "feedbackValue", "feedbackSubmitted"], ({ logText, fileTimers, currentFileTimer, feedbackValue, feedbackSubmitted }) => {
+                    //Reset variables
                     let currentURL = location.href;
                     fileTimers = [[], []];
                     feedbackValue = "";
+                    feedbackSubmitted = false;
                     currentFileTimer = ["", ""];
                     logText = "New logging session started at " + getTimeStamp(date) + "\nStarting URL:  " + currentURL + "\n";
-                    chrome.storage.sync.set({ logText, currentURL, fileTimers, currentFileTimer, feedbackValue });
+                    chrome.storage.sync.set({ logText, currentURL, fileTimers, currentFileTimer, feedbackValue, feedbackSubmitted });
                 });
 
                 //Log the current tab
@@ -61,7 +63,7 @@ function storageChangedListener(changed) {
             }
             //End
             if (oldItemValue == true && newItemValue == false) {
-                chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers", "feedbackValue"], ({ loggingStartTime, logText, fullLog, fileTimers, feedbackValue }) => {
+                chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers", "feedbackValue", "feedbackSubmitted"], ({ loggingStartTime, logText, fullLog, fileTimers, feedbackValue, feedbackSubmitted }) => {
                     timePassed = absoluteTime - loggingStartTime;
                     logText += "Ending URL:  " + location.href + "\nCurrent logging session ended at " + getTimeStamp(date) + " after " + timePassed + " ms\n";
                     logText += "\nTime spent on each file:\n";
@@ -88,7 +90,7 @@ function storageChangedListener(changed) {
                         logText += "Average number of accesses per file: " + avgAcesses+ "\n";
                     }
                     //Log the given feedback
-                    if (feedbackValue != "") {
+                    if (feedbackValue != "" && feedbackSubmitted == true) {
                         logText += "\nFeedback: " + feedbackValue + "\n";
                     } else {
                         logText += "\nNo feedback was given.\n";
@@ -117,7 +119,11 @@ document.addEventListener("click", function (e) {
     var target = e.target || e.srcElement;
     chrome.storage.sync.get("sessionstatus", ({ sessionstatus }) => {
         if (sessionstatus) {
+            //Check if the click was to adjust the feedback value
             adjustFeedbackValue(target);
+            //Check if the click was to submit feedback and handle it if so
+            handleIfSubmit(target);
+            //Log clicked element
             log(target);
         }
     });
@@ -142,6 +148,17 @@ function adjustFeedbackValue(element) {
                 feedbackValue = "Rejected";
             }
             chrome.storage.sync.set({ feedbackValue });
+        });
+    }
+}
+
+
+//Function to check whether a click was so submit feedback, if yes then handle it
+function handleIfSubmit(element) {
+    if (element.innerHTML.substring(13, 26) == "Submit review") {
+        chrome.storage.sync.get("feedbackSubmitted", ({ feedbackSubmitted }) => {
+            feedbackSubmitted = true;
+            chrome.storage.sync.set({ feedbackSubmitted });
         });
     }
 }
