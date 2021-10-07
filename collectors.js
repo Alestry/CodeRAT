@@ -63,7 +63,7 @@ function storageChangedListener(changed) {
             }
             //End
             if (oldItemValue == true && newItemValue == false) {
-                chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers", "feedbackValue", "feedbackSubmitted"], ({ loggingStartTime, logText, fullLog, fileTimers, feedbackValue, feedbackSubmitted }) => {
+                chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers", "feedbackValue", "feedbackSubmitted", "rawData"], ({ loggingStartTime, logText, fullLog, fileTimers, feedbackValue, feedbackSubmitted, rawData }) => {
                     timePassed = absoluteTime - loggingStartTime;
                     logText += "Ending URL:  " + location.href + "\nCurrent logging session ended at " + getTimeStamp(date) + " after " + timePassed + " ms\n";
                     logText += "\nTime spent on each file:\n";
@@ -95,8 +95,12 @@ function storageChangedListener(changed) {
                     } else {
                         logText += "\nNo feedback was given.\n";
                     }
+                    //Add the parameters to the rawData structure
+                    rawData = addToRawData(rawData, timePassed, feedbackValue, feedbackSubmitted);
+                    //Temp: show rawData
+                    //logText += "rawData: " + rawData;
                     fullLog += logText+ "\n----------\n";
-                    chrome.storage.sync.set({ loggingStartTime, logText, fullLog });
+                    chrome.storage.sync.set({ loggingStartTime, logText, fullLog, rawData });
                 });
             }
         }
@@ -161,6 +165,25 @@ function handleIfSubmit(element) {
             chrome.storage.sync.set({ feedbackSubmitted });
         });
     }
+}
+
+
+//Function which adds the current parameters to the rawData structure
+function addToRawData(rawData, totalSessionTime, feedbackValue, feedbackSubmitted) {
+    //get the total amount of sessions so far -> will use this number as the index for this session's data
+    i = rawData[0];
+    //add 1 to session counter at index 0
+    rawData[0] += 1;
+    //write this session's total duration into the array at index 1
+    rawData[1][i] = totalSessionTime;
+    //write this session's feedback value into the array at index 3 if feedback was given
+    if (feedbackSubmitted) {
+        rawData[3][i] = feedbackValue;
+    } else {
+        rawData[3][i] = "-";
+    }
+    //return rawData
+    return rawData;
 }
 
 
