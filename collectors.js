@@ -148,7 +148,12 @@ function adjustFeedbackValue(element) {
 //Also, force the end of a session
 function handleIfSubmit(element) {
     if (element.innerHTML.substring(13, 26) == "Submit review") {
-        chrome.storage.sync.get(["feedbackSubmitted", "sessionstatus", "sessionTabActive"], ({ feedbackSubmitted, sessionstatus, sessionTabActive }) => {
+        chrome.storage.sync.get(["feedbackSubmitted", "sessionstatus", "sessionTabActive", "feedbackValue"], ({ feedbackSubmitted, sessionstatus, sessionTabActive, feedbackValue }) => {
+            //If feedback was submitted but nothing is written into feedbackValue, it means that the default option of "Comment" was selected
+            if(feedbackValue == ""){
+                feedbackValue = "Commented";
+                chrome.storage.sync.set({feedbackValue});
+            }
             feedbackSubmitted = true;
             sessionstatus = false;
             sessionTabActive = false;
