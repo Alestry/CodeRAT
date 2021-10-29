@@ -45,22 +45,23 @@ function storageChangedListener(changed) {
             if (oldItemValue == false && newItemValue == true) {
                 loggingStartTime = absoluteTime;
                 chrome.storage.sync.set({ loggingStartTime });
-                chrome.storage.sync.get(["logText", "fileTimers", "currentFileTimer", "feedbackValue", "feedbackSubmitted"], ({ logText, fileTimers, currentFileTimer, feedbackValue, feedbackSubmitted }) => {
+                chrome.storage.sync.get(["logText", "fileTimers", "currentFileTimer", "feedbackValue", "reasonForRejection", "feedbackSubmitted"], ({ logText, fileTimers, currentFileTimer, feedbackValue, reasonForRejection ,feedbackSubmitted }) => {
                     //Reset variables
                     let currentURL = location.href;
                     fileTimers = [[], []];
                     feedbackValue = "";
+                    reasonForRejection = "";
                     feedbackSubmitted = false;
                     currentFileTimer = ["", ""];
                     logText = "EVENTS\n"
                     logText += "New logging session started at " + getTimeStamp(date) + "\nStarting URL:  " + currentURL + "\n";
-                    chrome.storage.sync.set({ logText, currentURL, fileTimers, currentFileTimer, feedbackValue, feedbackSubmitted });
+                    chrome.storage.sync.set({ logText, currentURL, fileTimers, currentFileTimer, feedbackValue, reasonForRejection, feedbackSubmitted });
                 });
             }
 
             //End
             if (oldItemValue == true && newItemValue == false) {
-                chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers", "feedbackValue", "feedbackSubmitted", "rawData"], ({ loggingStartTime, logText, fullLog, fileTimers, feedbackValue, feedbackSubmitted, rawData }) => {
+                chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers", "feedbackValue", "reasonForRejection", "feedbackSubmitted", "rawData"], ({ loggingStartTime, logText, fullLog, fileTimers, feedbackValue, reasonForRejection, feedbackSubmitted, rawData }) => {
                     timePassed = absoluteTime - loggingStartTime;
                     logText += "Ending URL:  " + location.href + "\nCurrent logging session ended at " + getTimeStamp(date) + " after " + timePassed + " ms\n";
                     logText += "\n\nANALYSIS"
@@ -90,6 +91,9 @@ function storageChangedListener(changed) {
                     //Log the given feedback
                     if (feedbackValue != "" && feedbackSubmitted == true) {
                         logText += "\nFeedback: " + feedbackValue + "\n";
+                        if(feedbackValue == "Rejected" && reasonForRejection != ""){
+                            logText += "Reason for rejection: " + reasonForRejection + "\n";
+                        }
                     } else {
                         logText += "\nNo feedback was given.\n";
                     }
@@ -150,16 +154,20 @@ function adjustFeedbackValue(element) {
 //Also, force the end of a session
 function handleIfSubmit(element) {
     if (element.innerHTML.substring(13, 26) == "Submit review") {
-        chrome.storage.sync.get(["feedbackSubmitted", "sessionstatus", "sessionTabActive", "feedbackValue"], ({ feedbackSubmitted, sessionstatus, sessionTabActive, feedbackValue }) => {
+        chrome.storage.sync.get(["feedbackSubmitted", "sessionstatus", "sessionTabActive", "feedbackValue", "reasonForRejection"], ({ feedbackSubmitted, sessionstatus, sessionTabActive, feedbackValue, reasonForRejection }) => {
             //If feedback was submitted but nothing is written into feedbackValue, it means that the default option of "Comment" was selected
             if(feedbackValue == ""){
                 feedbackValue = "Commented";
                 chrome.storage.sync.set({feedbackValue});
             }
+            //If the submitted feedback is Reject, store the reason for rejection
+            if(feedbackValue == "Rejected"){
+                reasonForRejection = document.getElementsByName("pull_request_review[body]")[0].value;
+            }
             feedbackSubmitted = true;
             sessionstatus = false;
             sessionTabActive = false;
-            chrome.storage.sync.set({ feedbackSubmitted, sessionstatus, sessionTabActive });
+            chrome.storage.sync.set({ feedbackSubmitted, sessionstatus, sessionTabActive, reasonForRejection });
         });
     }
 }

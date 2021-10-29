@@ -20,6 +20,7 @@ chrome.runtime.onInstalled.addListener(() => {
     //fileTimers: 2D array, holds all of the separate [file id, file timer] pairs
     //currentFileTimer: array of str, holds the current [file id, file timer] pair
     //feedbackValue: str, tracks what kind of feedback was given at the end of a pull request review session (approve/comment/reject)
+    //reasonForRejection: str, tracks the reason that was given if the feedback was "Rejected"
     //feedbackSubmitted: bool, tracks whether the feedback was actually submitted or just abandoned
     //rawData: array, holds all parameters for all sessions
     //  Index values:
@@ -38,10 +39,11 @@ chrome.runtime.onInstalled.addListener(() => {
     let fileTimers = [[], []];
     let currentFileTimer = ["", ""];
     let feedbackValue = "";
+    let reasonForRejection = "";
     let feedbackSubmitted = false;
     let rawData = [0, [], [[], []], []];
     //Initialize storage
-    chrome.storage.sync.set({ loggingstatus, sessionstatus, loggingStartTime, logText, fullLog, currentURL, sessionTabActive, sessionTabInactiveStartTime, fileTimers, currentFileTimer, feedbackValue, feedbackSubmitted, rawData });
+    chrome.storage.sync.set({ loggingstatus, sessionstatus, loggingStartTime, logText, fullLog, currentURL, sessionTabActive, sessionTabInactiveStartTime, fileTimers, currentFileTimer, feedbackValue, reasonForRejection, feedbackSubmitted, rawData });
 });
 
 
