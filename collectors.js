@@ -145,11 +145,14 @@ function adjustFeedbackValue(element) {
 
 
 //Function to check whether a click was so submit feedback, if yes then handle it
+//Also, force the end of a session
 function handleIfSubmit(element) {
     if (element.innerHTML.substring(13, 26) == "Submit review") {
-        chrome.storage.sync.get("feedbackSubmitted", ({ feedbackSubmitted }) => {
+        chrome.storage.sync.get(["feedbackSubmitted", "sessionstatus", "sessionTabActive"], ({ feedbackSubmitted, sessionstatus, sessionTabActive }) => {
             feedbackSubmitted = true;
-            chrome.storage.sync.set({ feedbackSubmitted });
+            sessionstatus = false;
+            sessionTabActive = false;
+            chrome.storage.sync.set({ feedbackSubmitted, sessionstatus, sessionTabActive });
         });
     }
 }
@@ -291,9 +294,6 @@ function handleUrlAndTabChanges(url){
                 //If not a file URL, reset the currentFileTimer parameter
                 currentFileTimer = ["", ""];
             }
-
-            //logText += timeStamp + /*(23 - timeStamp.length + 4) **/ '    '+ 'URL changed to ' + request.url + '\n';
-            console.log(timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'URL changed to ' + url + '\n');
 
             //Dynamically end a session
             //Check URL based on heuristics
