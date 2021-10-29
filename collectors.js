@@ -55,12 +55,8 @@ function storageChangedListener(changed) {
                     logText = "New logging session started at " + getTimeStamp(date) + "\nStarting URL:  " + currentURL + "\n";
                     chrome.storage.sync.set({ logText, currentURL, fileTimers, currentFileTimer, feedbackValue, feedbackSubmitted });
                 });
-
-                //Log the current tab
-                chrome.storage.sync.get("currentTab", ({ currentTab }) => {
-                    console.log(currentTab);
-                });
             }
+
             //End
             if (oldItemValue == true && newItemValue == false) {
                 chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers", "feedbackValue", "feedbackSubmitted", "rawData"], ({ loggingStartTime, logText, fullLog, fileTimers, feedbackValue, feedbackSubmitted, rawData }) => {
@@ -104,15 +100,6 @@ function storageChangedListener(changed) {
                 });
             }
         }
-
-        //Log the new fucused tab when a tab change occurs
-        if (item == "currentTab") {
-            console.log("Checkpoint");
-            if (changed[item].newValue != changed[item].oldValue) {
-                console.log("Tab has changed!");
-            }
-        }
-
     }
 }
 
@@ -194,13 +181,24 @@ chrome.storage.onChanged.addListener(storageChangedListener);
 //Listener for tab/url changes
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.message === "urlchange") {
-        chrome.storage.sync.get(["loggingstatus", "sessionstatus", "logText", "fileTimers", "currentFileTimer"], ({ loggingstatus, sessionstatus, logText, fileTimers, currentFileTimer }) => {
+        chrome.storage.sync.get(["loggingstatus", "sessionstatus", "fileTimers", "currentFileTimer"], ({ loggingstatus, sessionstatus, fileTimers, currentFileTimer }) => {
             //Dynamically start a session
             if (loggingstatus) {
                 let splitUrl = request.url.split("/");
                 //Check URL based on heuristics
                 if ((splitUrl[2] == "github.com" && splitUrl[5] == "pull") && !sessionstatus) {
                     sessionstatus = true;
+                    //With starting a new session, add a listnener which checks when the tab in which the session is running becomes unfocused / focused
+                    document.addEventListener("visibilitychange", event => {
+                        chrome.storage.sync.get("logText", ({logText})=>{
+                            if(document.visibilityState == "visible"){
+                                logText += "Tab became active at " + getTimeStamp(new Date) + "\n";
+                            } else{;
+                                logText += "Tab became inactive at " + getTimeStamp(new Date) + "\n";
+                            }
+                            chrome.storage.sync.set({logText});
+                        })
+                    });
                 }
                 chrome.storage.sync.set({ sessionstatus });
             }
@@ -273,7 +271,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     sessionstatus = false;
                 }
 
-                chrome.storage.sync.set({ logText, fileTimers, currentFileTimer, sessionstatus });
+                chrome.storage.sync.set({ fileTimers, currentFileTimer, sessionstatus });
             }
         });
     }
