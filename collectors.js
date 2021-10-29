@@ -160,13 +160,27 @@ function handleIfSubmit(element) {
                 feedbackValue = "Commented";
                 chrome.storage.sync.set({feedbackValue});
             }
-            //If the submitted feedback is Reject, store the reason for rejection
-            if(feedbackValue == "Rejected"){
-                reasonForRejection = document.getElementsByName("pull_request_review[body]")[0].value;
+            //When it comes to "Rejected" and "Commented" feedback types, GitHub only accepts non-empty comments as valid submissions
+            //If the comment is empty and the feedback is "Rejected" or "Commented", nothing happens and the logging session continues
+            //Thus, only end the current logging session if these hold. For "Approved", GitHub accepts not giving a comment as well
+            if(feedbackValue == "Rejected" || feedbackValue == "Commented"){
+                let comment = document.getElementsByName("pull_request_review[body]")[0].value;
+                if(comment != ""){
+                    //If the comment is non-empty, we are good to go
+                    feedbackSubmitted = true;
+                    sessionstatus = false;
+                    sessionTabActive = false;
+                    //If the submitted feedback is "Rejected", additionally store the comment as the reason for rejection
+                    if(feedbackValue == "Rejected"){
+                        reasonForRejection = comment;
+                    }
+                }
+            } else{
+                //If the submitted feedback is "Approved", accept anything and end the session
+                feedbackSubmitted = true;
+                sessionstatus = false;
+                sessionTabActive = false;
             }
-            feedbackSubmitted = true;
-            sessionstatus = false;
-            sessionTabActive = false;
             chrome.storage.sync.set({ feedbackSubmitted, sessionstatus, sessionTabActive, reasonForRejection });
         });
     }
