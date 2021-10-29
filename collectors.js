@@ -181,98 +181,125 @@ chrome.storage.onChanged.addListener(storageChangedListener);
 //Listener for tab/url changes
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.message === "urlchange") {
-        chrome.storage.sync.get(["loggingstatus", "sessionstatus", "fileTimers", "currentFileTimer"], ({ loggingstatus, sessionstatus, fileTimers, currentFileTimer }) => {
-            //Dynamically start a session
-            if (loggingstatus) {
-                let splitUrl = request.url.split("/");
-                //Check URL based on heuristics
-                if ((splitUrl[2] == "github.com" && splitUrl[5] == "pull") && !sessionstatus) {
-                    sessionstatus = true;
-                    //With starting a new session, add a listnener which checks when the tab in which the session is running becomes unfocused / focused
-                    document.addEventListener("visibilitychange", event => {
-                        chrome.storage.sync.get("logText", ({logText})=>{
-                            if(document.visibilityState == "visible"){
-                                logText += "Tab became active at " + getTimeStamp(new Date) + "\n";
-                            } else{;
-                                logText += "Tab became inactive at " + getTimeStamp(new Date) + "\n";
-                            }
-                            chrome.storage.sync.set({logText});
-                        })
-                    });
-                }
-                chrome.storage.sync.set({ sessionstatus });
-            }
-
-            //Handling files and file timers
-            if (loggingstatus && sessionstatus) {
-                let tempDate = new Date();
-                let tempTime = tempDate.getTime();
-                let timeStamp = getTimeStamp(tempDate);
-
-                //End the current timer segment for a file if one is running and add it to the fileTimers array
-                if (currentFileTimer[0] != "" && currentFileTimer[1] != "") {
-                    let currentFileId = currentFileTimer[0];
-                    let currentFileTime = currentFileTimer[1];
-                    let elapsedTime = tempTime - currentFileTime;
-                    //Check if the current file already has an entry in the fileTimers array
-                    let currentFileIdIndex = -1;
-                    let i = 0;
-                    for (i = 0; i < fileTimers.length; i++) {
-                        if ((currentFileId != "") && (fileTimers[i][0] == currentFileId)) {
-                            currentFileIdIndex = i;
-                            break;
-                        }
-                    }
-                    if (currentFileIdIndex != -1) {
-                        //If the current file already has an existing timer in the array, add the current elapsed time to it and add add 1 to the visit counter
-                        fileTimers[currentFileIdIndex][1] = (Number(fileTimers[currentFileIdIndex][1]) + elapsedTime).toString();
-                        fileTimers[currentFileIdIndex][2] += 1;
-                    } else {
-                        //If the current file does not yet have an existing timer in the array, create one, assign the current elapsed time and set its visit counter to 1
-                        //Due to the manner of creation of the fileTimers array, we need to do some janky things to have a clean array in the end
-                        if (fileTimers.length < 3) {
-                            //"Stupid" case -> need to overwrite existing empty array entries
-                            if (fileTimers[0] == "") {
-                                //Subcase 1: no entries yet
-                                fileTimers[0] = [currentFileId, elapsedTime.toString(), 1];
-                            } else if (fileTimers[1] == "") {
-                                //Subcase 2: one entry
-                                fileTimers[1] = [currentFileId, elapsedTime.toString(), 1];
-                            } else {
-                                //Subcase 3: two entries and both not empty -> can just push normally
-                                fileTimers.push([currentFileId, elapsedTime.toString(), 1]);
-                            }
-                        } else {
-                            //"Normal" case -> can just push a new entry
-                            fileTimers.push([currentFileId, elapsedTime.toString(), 1]);
-                        }
-                    }
-                }
-
-                //Determine if the new URL belongs to a file (not the nicest way of doing it)
-                //Split the URL into its components
-                let splitUrl = request.url.split("/");
-                //Check URL based on heuristics
-                if (splitUrl[2] == "github.com" && splitUrl[5] == "pull" && splitUrl[7] == "commits" && splitUrl[8].length == 40) {
-                    //If it is a file URL, start a timer for the current file
-                    let fileId = splitUrl[8];
-                    currentFileTimer = [fileId, tempTime.toString()];
-                } else {
-                    //If not a file URL, reset the currentFileTimer parameter
-                    currentFileTimer = ["", ""];
-                }
-
-                //logText += timeStamp + /*(23 - timeStamp.length + 4) **/ '    '+ 'URL changed to ' + request.url + '\n';
-                console.log(timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'URL changed to ' + request.url + '\n');
-
-                //Dynamically end a session
-                //Check URL based on heuristics
-                if (!(splitUrl[2] == "github.com" && splitUrl[5] == "pull") && sessionstatus) {
-                    sessionstatus = false;
-                }
-
-                chrome.storage.sync.set({ fileTimers, currentFileTimer, sessionstatus });
-            }
-        });
+        //If a url change was detected, call the handleUrlandTabChanged() function
+        handleUrlAndTabChanges(request.url);
     }
 });
+
+
+//This is needed because the standerd Chrome URL listener cannot detect some page changes -> window.onhashchange covers these missing parts
+//Not a nice way of doing it but due to the fact that this works on the entire window and not just the required tab, we first need to check if we are in the session's tab
+//This should only be executed if we are indeed in the current logging session's tab
+window.onhashchange = checkIfTabActiveForOnHashChange();
+
+
+//Check if the current active tab is the one where the logging session is running. If yes, call the handleUrlAndTabChanges() function
+function checkIfTabActiveForOnHashChange(){
+    chrome.storage.sync.get("sessionTabActive", ({sessionTabActive})=>{
+        if(sessionTabActive){
+            handleUrlAndTabChanges(location.href);
+        }
+    });
+}
+
+
+//This is called both from window.onhashchange and chrome onMessage URL/tab change listener
+function handleUrlAndTabChanges(url){
+    chrome.storage.sync.get(["loggingstatus", "sessionstatus", "sessionTabActive", "fileTimers", "currentFileTimer"], ({ loggingstatus, sessionstatus, sessionTabActive, fileTimers, currentFileTimer }) => {
+        //Dynamically start a session
+        if (loggingstatus) {
+            let splitUrl = url.split("/");
+            //Check URL based on heuristics
+            if ((splitUrl[2] == "github.com" && splitUrl[5] == "pull") && !sessionstatus) {
+                sessionstatus = true;
+                sessionTabActive = true;
+                //With starting a new session, add a listnener which checks when the tab in which the session is running becomes unfocused / focused
+                document.addEventListener("visibilitychange", event => {
+                    chrome.storage.sync.get("logText", ({logText})=>{
+                        if(document.visibilityState == "visible"){
+                            logText += "Tab became active at " + getTimeStamp(new Date) + "\n";
+                            sessionTabActive = true;
+                        } else{;
+                            logText += "Tab became inactive at " + getTimeStamp(new Date) + "\n";
+                            sessionTabActive = false;
+                        }
+                        chrome.storage.sync.set({logText});
+                    })
+                });
+            }
+            chrome.storage.sync.set({ sessionstatus });
+        }
+
+        //Handling files and file timers
+        if (loggingstatus && sessionstatus) {
+            let tempDate = new Date();
+            let tempTime = tempDate.getTime();
+            let timeStamp = getTimeStamp(tempDate);
+
+            //End the current timer segment for a file if one is running and add it to the fileTimers array
+            if (currentFileTimer[0] != "" && currentFileTimer[1] != "") {
+                let currentFileId = currentFileTimer[0];
+                let currentFileTime = currentFileTimer[1];
+                let elapsedTime = tempTime - currentFileTime;
+                //Check if the current file already has an entry in the fileTimers array
+                let currentFileIdIndex = -1;
+                let i = 0;
+                for (i = 0; i < fileTimers.length; i++) {
+                    if ((currentFileId != "") && (fileTimers[i][0] == currentFileId)) {
+                        currentFileIdIndex = i;
+                        break;
+                    }
+                }
+                if (currentFileIdIndex != -1) {
+                    //If the current file already has an existing timer in the array, add the current elapsed time to it and add add 1 to the visit counter
+                    fileTimers[currentFileIdIndex][1] = (Number(fileTimers[currentFileIdIndex][1]) + elapsedTime).toString();
+                    fileTimers[currentFileIdIndex][2] += 1;
+                } else {
+                    //If the current file does not yet have an existing timer in the array, create one, assign the current elapsed time and set its visit counter to 1
+                    //Due to the manner of creation of the fileTimers array, we need to do some janky things to have a clean array in the end
+                    if (fileTimers.length < 3) {
+                        //"Stupid" case -> need to overwrite existing empty array entries
+                        if (fileTimers[0] == "") {
+                            //Subcase 1: no entries yet
+                            fileTimers[0] = [currentFileId, elapsedTime.toString(), 1];
+                        } else if (fileTimers[1] == "") {
+                            //Subcase 2: one entry
+                            fileTimers[1] = [currentFileId, elapsedTime.toString(), 1];
+                        } else {
+                            //Subcase 3: two entries and both not empty -> can just push normally
+                            fileTimers.push([currentFileId, elapsedTime.toString(), 1]);
+                        }
+                    } else {
+                        //"Normal" case -> can just push a new entry
+                        fileTimers.push([currentFileId, elapsedTime.toString(), 1]);
+                    }
+                }
+            }
+
+            //Determine if the new URL belongs to a file (not the nicest way of doing it)
+            //Split the URL into its components
+            let splitUrl = url.split("/");
+            //Check URL based on heuristics
+            if (splitUrl[2] == "github.com" && splitUrl[5] == "pull" && splitUrl[7] == "commits" && splitUrl[8].length == 40) {
+                //If it is a file URL, start a timer for the current file
+                let fileId = splitUrl[8];
+                currentFileTimer = [fileId, tempTime.toString()];
+            } else {
+                //If not a file URL, reset the currentFileTimer parameter
+                currentFileTimer = ["", ""];
+            }
+
+            //logText += timeStamp + /*(23 - timeStamp.length + 4) **/ '    '+ 'URL changed to ' + request.url + '\n';
+            console.log(timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'URL changed to ' + url + '\n');
+
+            //Dynamically end a session
+            //Check URL based on heuristics
+            if (!(splitUrl[2] == "github.com" && splitUrl[5] == "pull") && sessionstatus) {
+                sessionstatus = false;
+                sessionTabActive = false;
+            }
+
+            chrome.storage.sync.set({ fileTimers, sessionTabActive, currentFileTimer, sessionstatus });
+        }
+    });
+}
