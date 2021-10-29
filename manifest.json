@@ -1,7 +1,7 @@
 {
 
   "manifest_version": 3,
-  "name": "Metrics Collection",
+  "name": "CodeRAT",
   "version": "0.1",
   "description": "Collects different metrics about code review sessions on GitHub.",
 
@@ -10,7 +10,7 @@
   },
 
   "icons": {
-    "48": "icons/border-48.png"
+    "48": "icons/Rat.png"
   },
 
   "content_scripts": [

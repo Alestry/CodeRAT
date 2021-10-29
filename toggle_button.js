@@ -24,4 +24,4 @@ chrome.storage.sync.get("loggingstatus", ({ loggingstatus }) => {
         toggle_button.style.backgroundColor = "lime";
         toggle_button.innerText = "Enable Logging";
     }
-})
+});
