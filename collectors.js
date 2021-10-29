@@ -52,7 +52,8 @@ function storageChangedListener(changed) {
                     feedbackValue = "";
                     feedbackSubmitted = false;
                     currentFileTimer = ["", ""];
-                    logText = "New logging session started at " + getTimeStamp(date) + "\nStarting URL:  " + currentURL + "\n";
+                    logText = "EVENTS\n"
+                    logText += "New logging session started at " + getTimeStamp(date) + "\nStarting URL:  " + currentURL + "\n";
                     chrome.storage.sync.set({ logText, currentURL, fileTimers, currentFileTimer, feedbackValue, feedbackSubmitted });
                 });
             }
@@ -62,6 +63,7 @@ function storageChangedListener(changed) {
                 chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers", "feedbackValue", "feedbackSubmitted", "rawData"], ({ loggingStartTime, logText, fullLog, fileTimers, feedbackValue, feedbackSubmitted, rawData }) => {
                     timePassed = absoluteTime - loggingStartTime;
                     logText += "Ending URL:  " + location.href + "\nCurrent logging session ended at " + getTimeStamp(date) + " after " + timePassed + " ms\n";
+                    logText += "\n\nANALYSIS"
                     logText += "\nTime spent on each file:\n";
                     //Janky things with fileTimers array, depending on its length (make it look nice)
                     if (fileTimers[0] == "") {
@@ -213,7 +215,7 @@ function checkIfTabActiveForOnHashChange(){
 
 //This is called both from window.onhashchange and chrome onMessage URL/tab change listener
 function handleUrlAndTabChanges(url){
-    chrome.storage.sync.get(["loggingstatus", "sessionstatus", "sessionTabActive", "fileTimers", "currentFileTimer"], ({ loggingstatus, sessionstatus, sessionTabActive, fileTimers, currentFileTimer }) => {
+    chrome.storage.sync.get(["loggingstatus", "sessionstatus", "sessionTabActive", "logText", "fileTimers", "currentFileTimer"], ({ loggingstatus, sessionstatus, sessionTabActive, logText, fileTimers, currentFileTimer }) => {
         //Dynamically start a session
         if (loggingstatus) {
             let splitUrl = url.split("/");
@@ -285,6 +287,8 @@ function handleUrlAndTabChanges(url){
                         fileTimers.push([currentFileId, elapsedTime.toString(), 1]);
                     }
                 }
+                //Log the time of the file being closed and for how long it was open
+                logText += "File " + currentFileId + " closed at " + timeStamp + " after " + elapsedTime + " ms\n";
             }
 
             //Determine if the new URL belongs to a file (not the nicest way of doing it)
@@ -295,6 +299,8 @@ function handleUrlAndTabChanges(url){
                 //If it is a file URL, start a timer for the current file
                 let fileId = splitUrl[8];
                 currentFileTimer = [fileId, tempTime.toString()];
+                //Log the time of the file being opened
+                logText += "File " + fileId + " opened at " + getTimeStamp(new Date) + "\n";
             } else {
                 //If not a file URL, reset the currentFileTimer parameter
                 currentFileTimer = ["", ""];
@@ -307,7 +313,7 @@ function handleUrlAndTabChanges(url){
                 sessionTabActive = false;
             }
 
-            chrome.storage.sync.set({ fileTimers, sessionTabActive, currentFileTimer, sessionstatus });
+            chrome.storage.sync.set({ fileTimers, sessionTabActive, logText, currentFileTimer, sessionstatus });
         }
     });
 }
