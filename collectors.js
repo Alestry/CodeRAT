@@ -215,15 +215,18 @@ function handleUrlAndTabChanges(url){
                 sessionTabActive = true;
                 //With starting a new session, add a listnener which checks when the tab in which the session is running becomes unfocused / focused
                 document.addEventListener("visibilitychange", event => {
-                    chrome.storage.sync.get("logText", ({logText})=>{
+                    chrome.storage.sync.get(["logText", "sessionTabInactiveStartTime"], ({logText, sessionTabInactiveStartTime})=>{
                         if(document.visibilityState == "visible"){
-                            logText += "Tab became active at " + getTimeStamp(new Date) + "\n";
                             sessionTabActive = true;
-                        } else{;
-                            logText += "Tab became inactive at " + getTimeStamp(new Date) + "\n";
+                            tempTabDate = new Date();
+                            logText += "Tab became active at " + getTimeStamp(tempTabDate) + " after " + (tempTabDate.getTime() - sessionTabInactiveStartTime) + " ms\n";
+                        } else{
                             sessionTabActive = false;
+                            tempTabDate = new Date();
+                            sessionTabInactiveStartTime = tempTabDate.getTime();
+                            logText += "Tab became inactive at " + getTimeStamp(tempTabDate) + "\n";
                         }
-                        chrome.storage.sync.set({logText});
+                        chrome.storage.sync.set({logText, sessionTabInactiveStartTime});
                     })
                 });
             }

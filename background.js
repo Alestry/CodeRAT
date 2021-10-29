@@ -16,6 +16,7 @@ chrome.runtime.onInstalled.addListener(() => {
     //fullLog: str, holds all of the pull request review session logs
     //currentURL: str, current URL
     //sessionTabActive: bool, tracks whether the tab in which the current logging session is running is active or not
+    //sessionTabInactiveStartTime: int, the absolute time when the current logging session's tab becomes inactive / unfocused
     //fileTimers: 2D array, holds all of the separate [file id, file timer] pairs
     //currentFileTimer: array of str, holds the current [file id, file timer] pair
     //feedbackValue: str, tracks what kind of feedback was given at the end of a pull request review session (approve/comment/reject)
@@ -33,13 +34,14 @@ chrome.runtime.onInstalled.addListener(() => {
     let fullLog = "";
     let currentURL = "";
     let sessionTabActive = false;
+    let sessionTabInactiveStartTime = 0;
     let fileTimers = [[], []];
     let currentFileTimer = ["", ""];
     let feedbackValue = "";
     let feedbackSubmitted = false;
     let rawData = [0, [], [[], []], []];
     //Initialize storage
-    chrome.storage.sync.set({ loggingstatus, sessionstatus, loggingStartTime, logText, fullLog, currentURL, sessionTabActive, fileTimers, currentFileTimer, feedbackValue, feedbackSubmitted, rawData });
+    chrome.storage.sync.set({ loggingstatus, sessionstatus, loggingStartTime, logText, fullLog, currentURL, sessionTabActive, sessionTabInactiveStartTime, fileTimers, currentFileTimer, feedbackValue, feedbackSubmitted, rawData });
 });
 
 
