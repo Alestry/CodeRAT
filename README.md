@@ -1,9 +1,16 @@
+# What is CodeRAT?
+
+
+CodeRAT is an open source chromium-based browser extension for GitHub code review analysis. It was developed as part of a bachelor's thesis.
+
+
+
 # How to Install CodeRAT
 
 
 Step 1 - Download or have a local copy of the repository on your computer
 
-Step 2 - Open The desired chromium-based browser
+Step 2 - Open the desired chromium-based browser
 
 Step 3 - Click on the three vertical dots in the upper right corner and then navigate to "More Tools" -> "Extensions"
 

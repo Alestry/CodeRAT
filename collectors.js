@@ -13,11 +13,11 @@ function getTimeStamp(date) {
 
 
 //Function to log the current timestamp with the current element
+//Only used for debugging and testing
 function log(element) {
     timeStamp = getTimeStamp(new Date());
     chrome.storage.sync.get("logText", ({ logText }) => {
-        //logText += timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'CLICK: ' + element.constructor.name + ' - ' + element.nodeName + ' - ' + element.innerHTML.substring(0, 150) + '\n';
-        console.log(timeStamp + /*(23 - timeStamp.length + 4) **/ '    ' + 'CLICK: ' + element.constructor.name + ' - ' + element.nodeName + ' - ' + element.innerHTML.substring(0, 150) + '\n');
+        console.log(timeStamp + '    ' + 'CLICK: ' + element.constructor.name + ' - ' + element.nodeName + ' - ' + element.innerHTML.substring(0, 150) + '\n');
         chrome.storage.sync.set({ logText });
     });
 }
@@ -116,8 +116,8 @@ document.addEventListener("click", function (e) {
             adjustFeedbackValue(target);
             //Check if the click was to submit feedback and handle it if so
             handleIfSubmit(target);
-            //Log clicked element
-            log(target);
+            //Log clicked element: uncomment if needed for debugging or testing
+            //log(target);
         }
     });
 }, false);
