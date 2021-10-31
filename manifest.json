@@ -2,7 +2,7 @@
 
   "manifest_version": 3,
   "name": "CodeRAT",
-  "version": "0.1",
+  "version": "1.0",
   "description": "Collects different metrics about code review sessions on GitHub.",
 
   "background": {
