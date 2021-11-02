@@ -15,7 +15,7 @@ toggle_button.addEventListener("click", async () => {
 });
 
 
-//On startup, apply formatting
+//Apply formatting dynamically
 chrome.storage.sync.get("loggingstatus", ({ loggingstatus }) => {
     if (loggingstatus) {
         toggle_button.style.backgroundColor = "red";

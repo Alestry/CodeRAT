@@ -1,4 +1,4 @@
-//Function to convert the Date
+//Function to convert the date into a nicely readable timestamp
 function getTimeStamp(date) {
     currentYear = date.getFullYear();
     currentMonth = date.getMonth() + 1;
@@ -66,7 +66,7 @@ function storageChangedListener(changed) {
                     logText += "Ending URL:  " + location.href + "\nCurrent logging session ended at " + getTimeStamp(date) + " after " + timePassed + " ms\n";
                     logText += "\n\nANALYSIS"
                     logText += "\nTime spent on each file:\n";
-                    //Janky things with fileTimers array, depending on its length (make it look nice)
+                    //Formatting the fileTimers array depending on its length (make it look nice)
                     if (fileTimers[0] == "") {
                         logText += "No files were opened in this logging session.\n";
                     } else if (fileTimers[1] == "") {
@@ -123,10 +123,9 @@ document.addEventListener("click", function (e) {
 }, false);
 
 
-//Function to adjust the feedback value of a pull request review session (approved/comment/rejected)
+//Function to adjust the feedback value of a pull request review session (Approved/Commented/Rejected)
 function adjustFeedbackValue(element) {
-    //Check if the clicked element was one of the radio buttons to give feedback
-    //Based on heuristics
+    //Check if the clicked element was one of the radio buttons or the box around them to give feedback
     let currentStr = element.innerHTML;
     let currentSubStr = element.innerHTML.substring(70, 76);
     if (currentSubStr == "approv" || currentStr == "Submit feedback and approve merging these changes." || currentSubStr == "commen" || currentStr == "Submit general feedback without explicit approval." || currentSubStr == "reject" || currentStr == "Submit feedback that must be addressed before merging.") {
@@ -187,17 +186,17 @@ function handleIfSubmit(element) {
 chrome.storage.onChanged.addListener(storageChangedListener);
 
 
-//Listener for tab/url changes
+//Listener for Tab/URL changes
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.message === "urlchange") {
-        //If a url change was detected, call the handleUrlandTabChanged() function
+        //If a URL change was detected, call the handleUrlandTabChanged() function
         handleUrlAndTabChanges(request.url);
     }
 });
 
 
 //This is needed because the standerd Chrome URL listener cannot detect some page changes -> window.onhashchange covers these missing parts
-//Not a nice way of doing it but due to the fact that this works on the entire window and not just the required tab, we first need to check if we are in the session's tab
+//This works on the entire window and not just the required tab, se we first need to check if we are in the session's tab
 //This should only be executed if we are indeed in the current logging session's tab
 window.onhashchange = checkIfTabActiveForOnHashChange();
 
@@ -212,17 +211,17 @@ function checkIfTabActiveForOnHashChange(){
 }
 
 
-//This is called both from window.onhashchange and chrome onMessage URL/tab change listener
+//This is called both from window.onhashchange and the Chrome onMessage URL/tab change listener
 function handleUrlAndTabChanges(url){
     chrome.storage.sync.get(["loggingstatus", "sessionstatus", "sessionTabActive", "logText", "fileTimers", "currentFileTimer"], ({ loggingstatus, sessionstatus, sessionTabActive, logText, fileTimers, currentFileTimer }) => {
         //Dynamically start a session
         if (loggingstatus) {
             let splitUrl = url.split("/");
-            //Check URL based on heuristics
+            //Check URL
             if ((splitUrl[2] == "github.com" && splitUrl[5] == "pull") && !sessionstatus) {
                 sessionstatus = true;
                 sessionTabActive = true;
-                //With starting a new session, add a listnener which checks when the tab in which the session is running becomes unfocused / focused
+                //With starting a new session, add a listener which checks when the tab in which the session is running becomes unfocused / focused
                 document.addEventListener("visibilitychange", event => {
                     chrome.storage.sync.get(["logText", "sessionTabInactiveStartTime"], ({logText, sessionTabInactiveStartTime})=>{
                         if(document.visibilityState == "visible"){
@@ -268,9 +267,9 @@ function handleUrlAndTabChanges(url){
                     fileTimers[currentFileIdIndex][2] += 1;
                 } else {
                     //If the current file does not yet have an existing timer in the array, create one, assign the current elapsed time and set its visit counter to 1
-                    //Due to the manner of creation of the fileTimers array, we need to do some janky things to have a clean array in the end
+                    //Formatting of fileTimers array to make it consistent
                     if (fileTimers.length < 3) {
-                        //"Stupid" case -> need to overwrite existing empty array entries
+                        //Subcase 0: need to overwrite existing empty array entries
                         if (fileTimers[0] == "") {
                             //Subcase 1: no entries yet
                             fileTimers[0] = [currentFileId, elapsedTime.toString(), 1];
@@ -290,10 +289,10 @@ function handleUrlAndTabChanges(url){
                 logText += "File " + currentFileId + " closed at " + timeStamp + " after " + elapsedTime + " ms\n";
             }
 
-            //Determine if the new URL belongs to a file (not the nicest way of doing it)
+            //Determine if the new URL belongs to a file
             //Split the URL into its components
             let splitUrl = url.split("/");
-            //Check URL based on heuristics
+            //Check URL
             if (splitUrl[2] == "github.com" && splitUrl[5] == "pull" && splitUrl[7] == "commits" && splitUrl[8].length == 40) {
                 //If it is a file URL, start a timer for the current file
                 let fileId = splitUrl[8];
@@ -306,7 +305,7 @@ function handleUrlAndTabChanges(url){
             }
 
             //Dynamically end a session
-            //Check URL based on heuristics
+            //Check URL
             if (!(splitUrl[2] == "github.com" && splitUrl[5] == "pull") && sessionstatus) {
                 sessionstatus = false;
                 sessionTabActive = false;
