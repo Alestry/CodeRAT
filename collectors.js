@@ -61,7 +61,56 @@ function storageChangedListener(changed) {
 
             //End
             if (oldItemValue == true && newItemValue == false) {
-                chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers", "feedbackValue", "reasonForRejection", "feedbackSubmitted"], ({ loggingStartTime, logText, fullLog, fileTimers, feedbackValue, reasonForRejection, feedbackSubmitted }) => {
+                chrome.storage.sync.get(["loggingStartTime", "logText", "fullLog", "fileTimers", "currentFileTimer", "feedbackValue", "reasonForRejection", "feedbackSubmitted"], ({ loggingStartTime, logText, fullLog, fileTimers, currentFileTimer, feedbackValue, reasonForRejection, feedbackSubmitted }) => {
+                    //If a fileTimer is still running, end it
+                    //End the current timer segment for a file if one is running and add it to the fileTimers array
+                    if (currentFileTimer[0] != "" && currentFileTimer[1] != "") {
+                        let tempDate = new Date();
+                        let tempTime = tempDate.getTime();
+                        let timeStamp = getTimeStamp(tempDate);
+                        let currentFileId = currentFileTimer[0];
+                        let currentFileTime = currentFileTimer[1];
+                        let elapsedTime = tempTime - currentFileTime;
+                        //Check if the current file already has an entry in the fileTimers array
+                        let currentFileIdIndex = -1;
+                        let i = 0;
+                        for (i = 0; i < fileTimers.length; i++) {
+                            if ((currentFileId != "") && (fileTimers[i][0] == currentFileId)) {
+                                currentFileIdIndex = i;
+                                break;
+                            }
+                        }
+                        if (currentFileIdIndex != -1) {
+                            //If the current file already has an existing timer in the array, add the current elapsed time to it and add add 1 to the visit counter
+                            fileTimers[currentFileIdIndex][1] = (Number(fileTimers[currentFileIdIndex][1]) + elapsedTime).toString();
+                            fileTimers[currentFileIdIndex][2] += 1;
+                        } else {
+                            //If the current file does not yet have an existing timer in the array, create one, assign the current elapsed time and set its visit counter to 1
+                            //Formatting of fileTimers array to make it consistent
+                            if (fileTimers.length < 3) {
+                                //Subcase 0: need to overwrite existing empty array entries
+                                if (fileTimers[0] == "") {
+                                    //Subcase 1: no entries yet
+                                    fileTimers[0] = [currentFileId, elapsedTime.toString(), 1];
+                                } else if (fileTimers[1] == "") {
+                                    //Subcase 2: one entry
+                                    fileTimers[1] = [currentFileId, elapsedTime.toString(), 1];
+                                } else {
+                                    //Subcase 3: two entries and both not empty -> can just push normally
+                                    fileTimers.push([currentFileId, elapsedTime.toString(), 1]);
+                                }
+                            } else {
+                                //"Normal" case -> can just push a new entry
+                                fileTimers.push([currentFileId, elapsedTime.toString(), 1]);
+                            }
+                        }
+                        //Log the time of the file being closed and for how long it was open
+                        logText += "File " + currentFileId + " closed at " + timeStamp + " after " + elapsedTime + " ms\n";
+                    }
+                    //Generate the log file
+                    //Need to update the date and time here for it to still be accurate
+                    date = new Date();
+                    absoluteTime = date.getTime();
                     timePassed = absoluteTime - loggingStartTime;
                     logText += "Ending URL:  " + location.href + "\nCurrent logging session ended at " + getTimeStamp(date) + " after " + timePassed + " ms\n";
                     logText += "\n\nANALYSIS"
